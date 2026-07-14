@@ -99,8 +99,10 @@ securitychecker serve --port 8080
 # open http://localhost:8080
 ```
 
-Paste targets or upload a `.txt`/`.csv`, hit **Scan**, and get a sortable table
-with expandable per-target detail plus **Copy JSON** / **Download CSV**.
+Paste targets or upload a `.txt`/`.csv`, hit **Scan**, and get a clean results
+table — summary tiles, colored status pills, expandable per-target detail, and
+**Copy JSON** / **Download CSV** export. Single self-contained page, no external
+assets.
 
 ## What gets reported
 

@@ -6,73 +6,259 @@
 <title>SecurityChecker</title>
 <style>
   :root{
-    --bg:#0d1117; --panel:#161b22; --border:#30363d; --fg:#e6edf3; --muted:#8b949e;
-    --accent:#58a6ff; --green:#3fb950; --red:#f85149; --yellow:#d29922; --cyan:#39c5cf;
+    --bg:#f6f9fc; --surface:#ffffff;
+    --ink:#0a2540; --ink-2:#3c4a5e; --muted:#697386;
+    --border:#e6e9ee; --border-strong:#d7dee6;
+    --accent:#635bff; --accent-600:#5449e6; --accent-ink:#4b45b8;
+    --grad:linear-gradient(105deg,#635bff 0%,#7a5cff 45%,#00c6fb 110%);
+    --grad-soft:linear-gradient(105deg,#eef0ff 0%,#f3edff 50%,#e6f9ff 100%);
+    --ok:#0f9d78; --ok-bg:#e4f6f0;
+    --warn:#b25f00; --warn-bg:#fbeddb;
+    --bad:#df1b41; --bad-bg:#fce8ec;
+    --shadow-sm:0 1px 2px rgba(10,37,64,.06),0 1px 3px rgba(10,37,64,.07);
+    --shadow-md:0 4px 14px rgba(10,37,64,.07),0 10px 30px rgba(10,37,64,.06);
+    --shadow-lg:0 24px 64px rgba(50,50,93,.13),0 10px 28px rgba(10,37,64,.07);
+    --ring:0 0 0 4px rgba(99,91,255,.16);
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    --mono:"SF Mono","JetBrains Mono","Fira Code",ui-monospace,Menlo,Consolas,monospace;
+    --r:12px;
   }
   *{box-sizing:border-box}
-  body{margin:0;font:14px/1.5 ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--bg);color:var(--fg)}
-  header{padding:20px 24px;border-bottom:1px solid var(--border)}
-  h1{margin:0;font-size:18px}
-  h1 span{color:var(--accent)}
-  .sub{color:var(--muted);font-size:12px;margin-top:4px}
-  main{max-width:1100px;margin:0 auto;padding:24px}
-  .panel{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:16px;margin-bottom:20px}
-  textarea{width:100%;min-height:130px;background:var(--bg);color:var(--fg);border:1px solid var(--border);
-    border-radius:6px;padding:10px;font:13px ui-monospace,monospace;resize:vertical}
-  .row{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:12px}
-  button{background:var(--accent);color:#06101f;border:0;border-radius:6px;padding:9px 18px;font-weight:600;cursor:pointer;font-family:inherit}
-  button:hover{filter:brightness(1.1)}
-  button.ghost{background:transparent;color:var(--fg);border:1px solid var(--border)}
-  button:disabled{opacity:.5;cursor:not-allowed}
-  label.file{border:1px dashed var(--border);border-radius:6px;padding:8px 14px;color:var(--muted);cursor:pointer}
-  label.file:hover{border-color:var(--accent);color:var(--fg)}
-  input[type=file]{display:none}
-  .chk{color:var(--muted);display:flex;align-items:center;gap:6px}
-  .spacer{flex:1}
-  table{width:100%;border-collapse:collapse;font-size:13px}
-  th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--border);vertical-align:top}
-  th{color:var(--muted);font-weight:600;font-size:11px;letter-spacing:.05em;text-transform:uppercase}
-  tr.target-row{cursor:pointer}
-  tr.target-row:hover{background:#1c2230}
-  td.host{color:var(--fg);font-weight:600}
-  .pill{display:inline-block;padding:1px 8px;border-radius:10px;font-size:11px;font-weight:600}
-  .ok{color:var(--green)} .bad{color:var(--red)} .warn{color:var(--yellow)} .muted{color:var(--muted)} .cyan{color:var(--cyan)}
-  .detail td{background:#0f141b;color:var(--muted);white-space:pre-wrap;font-size:12px;padding:12px 16px}
-  .detail b{color:var(--fg)}
-  .status{color:var(--muted);font-size:12px;min-height:18px}
-  a{color:var(--accent)}
-  .disclaimer{color:var(--muted);font-size:11px;margin-top:8px}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);
+    font-family:var(--sans);font-size:14px;line-height:1.55;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  }
+  a{color:var(--accent-ink);text-decoration:none}
+  a:hover{color:var(--accent-600)}
+  ::selection{background:rgba(99,91,255,.18)}
+
+  /* ---- top nav ---- */
+  .nav{
+    position:sticky;top:0;z-index:20;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:14px 24px;border-bottom:1px solid var(--border);
+    background:rgba(255,255,255,.78);backdrop-filter:saturate(180%) blur(12px);
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:-.01em;font-size:15px}
+  .mark{width:28px;height:28px;border-radius:8px;background:var(--grad);
+    display:grid;place-items:center;box-shadow:0 2px 8px rgba(99,91,255,.35),inset 0 1px 0 rgba(255,255,255,.4)}
+  .brand b{font-weight:700}
+  .brand .accentword{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .nav-right{display:flex;align-items:center;gap:14px}
+  .chip{font-family:var(--mono);font-size:12px;color:var(--muted);
+    border:1px solid var(--border);border-radius:999px;padding:3px 10px;background:var(--surface)}
+  .nav a.ext{color:var(--ink-2);font-weight:550;font-size:13px;display:inline-flex;align-items:center;gap:5px}
+  .nav a.ext:hover{color:var(--ink)}
+
+  /* ---- hero + console ---- */
+  .hero{position:relative;overflow:hidden;padding:72px 24px 40px;text-align:center}
+  .hero::before{
+    content:"";position:absolute;inset:-40% 0 auto 0;height:520px;z-index:0;
+    background:
+      radial-gradient(42% 60% at 22% 18%,rgba(99,91,255,.22),transparent 60%),
+      radial-gradient(38% 55% at 82% 8%,rgba(0,198,251,.20),transparent 62%),
+      radial-gradient(46% 60% at 60% 46%,rgba(122,92,255,.14),transparent 60%);
+    filter:blur(6px);animation:drift 18s ease-in-out infinite alternate;
+  }
+  @keyframes drift{from{transform:translate3d(0,0,0)}to{transform:translate3d(0,-18px,0) scale(1.04)}}
+  .hero>*{position:relative;z-index:1}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--accent-ink);font-weight:600;margin-bottom:18px}
+  h1{margin:0 auto;max-width:15ch;font-size:clamp(30px,5.4vw,50px);line-height:1.06;
+    letter-spacing:-.032em;font-weight:760}
+  h1 .g{background:var(--grad);-webkit-background-clip:text;background-clip:text;color:transparent}
+  .lede{margin:18px auto 0;max-width:52ch;color:var(--ink-2);font-size:16px}
+  .lede code{font-family:var(--mono);font-size:13.5px;color:var(--accent-ink);
+    background:#eef0ff;border:1px solid #e2e2ff;border-radius:6px;padding:1px 6px}
+
+  main{max-width:1060px;margin:0 auto;padding:0 24px 64px}
+
+  .console{
+    margin:34px auto 0;max-width:840px;background:var(--surface);
+    border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-lg);
+    overflow:hidden;
+  }
+  .console-top{height:4px;background:var(--grad)}
+  .console-body{padding:22px}
+  .console-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .console-head .label{font-size:12px;font-weight:650;letter-spacing:.04em;text-transform:uppercase;color:var(--muted)}
+  textarea{
+    width:100%;min-height:132px;resize:vertical;display:block;
+    font-family:var(--mono);font-size:13.5px;line-height:1.6;color:var(--ink);
+    background:#fbfcfe;border:1px solid var(--border-strong);border-radius:10px;padding:14px 16px;
+  }
+  textarea::placeholder{color:#9aa4b2}
+  textarea:focus{outline:none;border-color:var(--accent);box-shadow:var(--ring);background:#fff}
+
+  .controls{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:16px}
+  .btn{
+    font-family:var(--sans);font-size:14px;font-weight:600;cursor:pointer;
+    border:1px solid transparent;border-radius:10px;padding:11px 18px;
+    display:inline-flex;align-items:center;gap:8px;transition:transform .12s ease,box-shadow .12s ease,background .12s ease;
+  }
+  .btn-primary{color:#fff;background:var(--grad);box-shadow:0 2px 10px rgba(99,91,255,.4),inset 0 1px 0 rgba(255,255,255,.25)}
+  .btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 18px rgba(99,91,255,.46),inset 0 1px 0 rgba(255,255,255,.25)}
+  .btn-primary:active{transform:translateY(0)}
+  .btn-primary:disabled{opacity:.6;cursor:default;transform:none;box-shadow:none}
+  .btn-ghost{background:var(--surface);border-color:var(--border-strong);color:var(--ink-2)}
+  .btn-ghost:hover{border-color:#c3ccd6;color:var(--ink);background:#fbfcfe}
+  .btn-ghost:disabled{opacity:.5;cursor:default}
+  .file-label{cursor:pointer}
+  input[type=file]{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+  .toggle{display:inline-flex;align-items:center;gap:8px;color:var(--ink-2);font-size:13.5px;cursor:pointer;user-select:none;margin-left:2px}
+  .toggle input{accent-color:var(--accent);width:16px;height:16px}
+  .spacer{flex:1 1 auto}
+  .status{min-height:20px;margin-top:14px;font-family:var(--mono);font-size:12.5px;color:var(--muted)}
+  .status.err{color:var(--bad)}
+  .hint{margin-top:14px;font-size:12.5px;color:var(--muted);text-align:center}
+
+  /* ---- results ---- */
+  .results{margin-top:44px;opacity:0;transform:translateY(8px);transition:opacity .35s ease,transform .35s ease}
+  .results.show{opacity:1;transform:none}
+  .summary{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:20px}
+  .stat{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:16px 18px;box-shadow:var(--shadow-sm)}
+  .stat .n{font-family:var(--mono);font-size:26px;font-weight:600;letter-spacing:-.02em;font-variant-numeric:tabular-nums;line-height:1}
+  .stat .k{display:flex;align-items:center;gap:7px;margin-top:8px;font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.05em}
+  .dot{width:7px;height:7px;border-radius:50%;flex:none}
+  .dot.a{background:var(--accent)} .dot.ok{background:var(--ok)} .dot.warn{background:var(--warn)} .dot.bad{background:var(--bad)}
+
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:16px;box-shadow:var(--shadow-md);overflow:hidden}
+  .card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:16px 20px;border-bottom:1px solid var(--border)}
+  .card-head h2{margin:0;font-size:14px;font-weight:650;letter-spacing:.01em}
+  .card-head .actions{display:flex;gap:8px}
+  .table-scroll{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  thead th{
+    text-align:left;padding:11px 20px;font-size:11px;font-weight:650;letter-spacing:.06em;
+    text-transform:uppercase;color:var(--muted);border-bottom:1px solid var(--border);white-space:nowrap;background:#fbfcfe;
+  }
+  tbody td{padding:13px 20px;border-bottom:1px solid var(--border);vertical-align:middle;white-space:nowrap}
+  tr.row{cursor:pointer;transition:background .12s ease}
+  tr.row:hover{background:#f7f9fc}
+  tr.row td:first-child{font-weight:600}
+  .host{display:inline-flex;align-items:center;gap:8px}
+  .chevron{color:var(--muted);transition:transform .18s ease;flex:none}
+  tr.row.open .chevron{transform:rotate(90deg)}
+  .mono{font-family:var(--mono)}
+  .email{font-family:var(--mono);font-size:13px}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;
+    padding:3px 10px;border-radius:999px;line-height:1.5;white-space:nowrap}
+  .pill.ok{color:var(--ok);background:var(--ok-bg)}
+  .pill.warn{color:var(--warn);background:var(--warn-bg)}
+  .pill.bad{color:var(--bad);background:var(--bad-bg)}
+  .pill.accent{color:var(--accent-ink);background:#eef0ff}
+  .pill.muted{color:var(--muted);background:#eef1f5}
+
+  .detail td{background:#fbfcfe;padding:0;border-bottom:1px solid var(--border)}
+  .detail-inner{padding:18px 22px;display:grid;gap:18px}
+  .dsec h4{margin:0 0 8px;font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);font-weight:650;
+    display:flex;align-items:center;gap:8px}
+  .kv{display:grid;grid-template-columns:150px 1fr;gap:4px 16px;font-family:var(--mono);font-size:12.5px}
+  .kv dt{color:var(--muted)}
+  .kv dd{margin:0;color:var(--ink);word-break:break-word}
+  .list{font-family:var(--mono);font-size:12.5px;color:var(--ink-2);display:grid;gap:3px}
+  .list .muted{color:var(--muted)}
+  .detail .err{font-family:var(--mono);font-size:13px;color:var(--bad)}
+
+  footer{max-width:1060px;margin:0 auto;padding:26px 24px 48px;border-top:1px solid var(--border);
+    display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:var(--muted);font-size:12.5px}
+  footer .warn-note{color:var(--ink-2)}
+
+  @media (max-width:720px){
+    .summary{grid-template-columns:repeat(2,1fr)}
+    .hero{padding:52px 20px 28px}
+    thead th,tbody td{padding-left:16px;padding-right:16px}
+    .kv{grid-template-columns:1fr}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+  }
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:6px}
 </style>
 </head>
 <body>
-<header>
-  <h1>Security<span>Checker</span></h1>
-  <div class="sub">robots.txt · security.txt (RFC 9116) · /.well-known/ — passive recon for authorized targets only</div>
-</header>
-<main>
-  <div class="panel">
-    <textarea id="input" placeholder="Paste targets — one per line, or comma/space separated&#10;example.com&#10;https://github.com&#10;hackerone.com"></textarea>
-    <div class="row">
-      <button id="scan">Scan</button>
-      <label class="file">Upload .txt / .csv<input id="file" type="file" accept=".txt,.csv"></label>
-      <label class="chk"><input id="wk" type="checkbox" checked> probe /.well-known/</label>
-      <div class="spacer"></div>
-      <button class="ghost" id="copy" disabled>Copy JSON</button>
-      <button class="ghost" id="csv" disabled>Download CSV</button>
-    </div>
-    <div class="status" id="status"></div>
-    <div class="disclaimer">Only run this against systems you are authorized to test. Every request is a plain GET of a public, standardized file.</div>
+<nav class="nav">
+  <div class="brand">
+    <span class="mark" aria-hidden="true">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+        <path d="M12 2.5 4 5.5v6c0 4.4 3.1 8.2 8 10 4.9-1.8 8-5.6 8-10v-6L12 2.5Z" stroke="#fff" stroke-width="1.7" stroke-linejoin="round"/>
+        <circle cx="12" cy="11" r="2.1" stroke="#fff" stroke-width="1.6"/>
+        <path d="M12 13.1v3.1M9.9 11H7.8M16.2 11h-2.1" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </span>
+    <span>Security<span class="accentword">Checker</span></span>
   </div>
+  <div class="nav-right">
+    <span class="chip">v1.0.0</span>
+    <a class="ext" href="https://github.com/11lunaric11/securitychecker" target="_blank" rel="noopener">
+      GitHub
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M7 17 17 7M9 7h8v8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </a>
+  </div>
+</nav>
 
-  <div class="panel" id="resultsPanel" style="display:none">
-    <table id="results">
-      <thead><tr>
-        <th>Target</th><th>robots</th><th>sec.txt</th><th>expires</th><th>contact</th><th>.well-known</th>
-      </tr></thead>
-      <tbody id="tbody"></tbody>
-    </table>
-  </div>
+<header class="hero">
+  <div class="eyebrow">robots.txt · security.txt · /.well-known</div>
+  <h1>Find who to <span class="g">disclose to</span>, across every target at once.</h1>
+  <p class="lede">Paste a list of domains and get each site's security contact, disclosure policy, and recon surface — parsed from <code>security.txt</code>, <code>robots.txt</code>, and <code>/.well-known/</code>.</p>
+
+  <section class="console" aria-label="Scan console">
+    <div class="console-top"></div>
+    <div class="console-body">
+      <div class="console-head">
+        <span class="label">Targets</span>
+        <label class="toggle"><input id="wk" type="checkbox" checked> probe /.well-known/</label>
+      </div>
+      <textarea id="input" spellcheck="false" autocomplete="off" autocorrect="off" autocapitalize="off"
+        placeholder="One per line, or comma / space separated&#10;&#10;example.com&#10;https://github.com&#10;hackerone.com"></textarea>
+      <div class="controls">
+        <button id="scan" class="btn btn-primary">
+          Scan targets
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 12h13M13 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+        <label class="btn btn-ghost file-label" for="file">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 16V4m0 0L7 9m5-5 5 5M5 20h14" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Upload .txt / .csv
+        </label>
+        <input id="file" type="file" accept=".txt,.csv">
+        <span class="spacer"></span>
+      </div>
+      <div class="status" id="status"></div>
+    </div>
+  </section>
+  <p class="hint">Authorized targets only — every request is a plain <span class="mono">GET</span> of a public, standardized file. Press <span class="mono">⌘/Ctrl + Enter</span> to scan.</p>
+</header>
+
+<main>
+  <section class="results" id="results" aria-live="polite">
+    <div class="summary" id="summary"></div>
+    <div class="card">
+      <div class="card-head">
+        <h2 id="resultsTitle">Results</h2>
+        <div class="actions">
+          <button class="btn btn-ghost" id="copy" disabled style="padding:7px 12px;font-size:13px">Copy JSON</button>
+          <button class="btn btn-ghost" id="csv" disabled style="padding:7px 12px;font-size:13px">Download CSV</button>
+        </div>
+      </div>
+      <div class="table-scroll">
+        <table>
+          <thead><tr>
+            <th>Target</th><th>robots.txt</th><th>security.txt</th><th>expires</th><th>contact</th><th>.well-known</th>
+          </tr></thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
 </main>
+
+<footer>
+  <span class="warn-note">Run only against systems you're authorized to test.</span>
+  <span>SecurityChecker · MIT · <a href="https://github.com/11lunaric11/securitychecker" target="_blank" rel="noopener">source</a></span>
+</footer>
 
 <script>
 const $ = s => document.querySelector(s);
@@ -84,47 +270,51 @@ $('#file').addEventListener('change', async e => {
   const text = await f.text();
   const ta = $('#input');
   ta.value = (ta.value.trim() ? ta.value.trim() + "\n" : "") + text.trim();
-  $('#status').textContent = `Loaded ${f.name}`;
+  setStatus(`Loaded ${f.name} — ${countTargets(ta.value)} target(s)`);
 });
-
 $('#scan').addEventListener('click', run);
-$('#input').addEventListener('keydown', e => { if (e.ctrlKey && e.key === 'Enter') run(); });
+$('#input').addEventListener('keydown', e => { if ((e.ctrlKey||e.metaKey) && e.key === 'Enter') run(); });
+
+function countTargets(s){ return s.split(/[\n,\s]+/).filter(Boolean).length; }
+function setStatus(msg, isErr){ const el=$('#status'); el.textContent=msg||''; el.classList.toggle('err',!!isErr); }
+function esc(s){ return String(s??'').replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+function host(r){ return (r.base_url||r.target||'').replace(/^https?:\/\//,''); }
 
 async function run(){
   const input = $('#input').value.trim();
-  if (!input){ $('#status').textContent = 'Enter at least one target.'; return; }
+  if (!input){ setStatus('Enter at least one target.', true); return; }
   const btn = $('#scan');
-  btn.disabled = true; btn.textContent = 'Scanning…';
-  $('#status').textContent = 'Running…';
+  btn.disabled = true; btn.style.opacity=.6;
+  setStatus('Scanning ' + countTargets(input) + ' target(s)…');
   try{
     const res = await fetch('/api/scan', {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ input, wellknown: $('#wk').checked })
     });
-    if(!res.ok) throw new Error(await res.text());
+    if(!res.ok) throw new Error((await res.text()).trim() || res.statusText);
     const data = await res.json();
     lastResults = data.results || [];
     render(lastResults);
-    $('#status').textContent = `Scanned ${data.count} target(s)` + (data.truncated ? ` (truncated to 200)` : '');
+    setStatus(`Done — scanned ${data.count} target(s)` + (data.truncated ? ' (capped at 200)' : ''));
     $('#copy').disabled = $('#csv').disabled = lastResults.length === 0;
   }catch(err){
-    $('#status').textContent = 'Error: ' + err.message;
+    setStatus('Error: ' + err.message, true);
   }finally{
-    btn.disabled = false; btn.textContent = 'Scan';
+    btn.disabled = false; btn.style.opacity=1;
   }
 }
 
-function esc(s){ return String(s??'').replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
-function host(r){ return (r.base_url||r.target||'').replace(/^https?:\/\//,''); }
-
 function render(results){
-  $('#resultsPanel').style.display = results.length ? 'block' : 'none';
+  const wrap = $('#results');
+  wrap.classList.toggle('show', results.length>0);
+  renderSummary(results);
+  $('#resultsTitle').textContent = `Results · ${results.length}`;
   const tb = $('#tbody'); tb.innerHTML = '';
-  results.forEach((r, i) => {
+  results.forEach(r => {
     const tr = document.createElement('tr');
-    tr.className = 'target-row';
+    tr.className = 'row';
     tr.innerHTML = `
-      <td class="host">${esc(host(r))}</td>
+      <td><span class="host"><svg class="chevron" width="12" height="12" viewBox="0 0 24 24" fill="none"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>${esc(host(r))}</span></td>
       <td>${robotsCell(r)}</td>
       <td>${secCell(r)}</td>
       <td>${expiresCell(r)}</td>
@@ -132,99 +322,131 @@ function render(results){
       <td>${wkCell(r)}</td>`;
     const detail = document.createElement('tr');
     detail.className = 'detail'; detail.style.display = 'none';
-    detail.innerHTML = `<td colspan="6">${detailHTML(r)}</td>`;
+    detail.innerHTML = `<td colspan="6"><div class="detail-inner">${detailHTML(r)}</div></td>`;
     tr.addEventListener('click', () => {
-      detail.style.display = detail.style.display === 'none' ? 'table-row' : 'none';
+      const open = detail.style.display !== 'none';
+      detail.style.display = open ? 'none' : 'table-row';
+      tr.classList.toggle('open', !open);
     });
     tb.appendChild(tr); tb.appendChild(detail);
   });
 }
 
+function renderSummary(results){
+  const sec = results.filter(r=>r.security_txt&&r.security_txt.found).length;
+  const rob = results.filter(r=>r.robots&&r.robots.found).length;
+  const err = results.filter(r=>r.error).length;
+  const tiles = [
+    ['a',   results.length, 'targets scanned'],
+    ['ok',  sec,            'security.txt'],
+    ['ok',  rob,            'robots.txt'],
+    ['bad', err,            'errors'],
+  ];
+  $('#summary').innerHTML = tiles.map(([c,n,k])=>
+    `<div class="stat"><div class="n">${n}</div><div class="k"><span class="dot ${c}"></span>${k}</div></div>`
+  ).join('');
+}
+
 function robotsCell(r){
-  if(r.error) return '<span class="bad">error</span>';
-  if(r.robots && r.robots.found) return `<span class="ok">yes (${(r.robots.disallow||[]).length})</span>`;
-  return '<span class="muted">no</span>';
+  if(r.error) return '<span class="pill bad">error</span>';
+  if(r.robots && r.robots.found){
+    const n=(r.robots.disallow||[]).length;
+    return `<span class="pill ok">${n} disallow</span>`;
+  }
+  return '<span class="pill muted">none</span>';
 }
 function secCell(r){
-  const s = r.security_txt;
-  if(!s || !s.found) return '<span class="muted">no</span>';
-  return `<span class="ok">yes</span> <span class="muted">(${s.location==='legacy-root'?'root':'wk'})</span>`;
+  const s=r.security_txt;
+  if(!s||!s.found) return '<span class="pill muted">none</span>';
+  return `<span class="pill ok">found · ${s.location==='legacy-root'?'root':'wk'}</span>`;
 }
 function expiresCell(r){
-  const s = r.security_txt;
-  if(!s || !s.found) return '<span class="muted">—</span>';
-  const st = s.expiry_state;
-  if(st==='valid') return '<span class="ok">valid</span>';
-  if(st==='expired') return '<span class="bad">EXPIRED</span>';
-  if(st==='invalid') return '<span class="warn">invalid</span>';
-  return '<span class="warn">missing</span>';
+  const s=r.security_txt;
+  if(!s||!s.found) return '<span class="pill muted">—</span>';
+  const st=s.expiry_state;
+  if(st==='valid')   return '<span class="pill ok">valid</span>';
+  if(st==='expired') return '<span class="pill bad">expired</span>';
+  if(st==='invalid') return '<span class="pill warn">invalid</span>';
+  return '<span class="pill warn">missing</span>';
 }
 function contactCell(r){
-  const s = r.security_txt;
-  if(!s || !s.found) return '<span class="muted">—</span>';
-  const list = (s.emails && s.emails.length) ? s.emails : (s.contact||[]);
-  if(!list.length) return '<span class="muted">—</span>';
-  const extra = list.length>1 ? ` <span class="muted">+${list.length-1}</span>` : '';
-  return `<span class="cyan">${esc(list[0])}</span>${extra}`;
+  const s=r.security_txt;
+  if(!s||!s.found) return '<span class="pill muted">—</span>';
+  const list=(s.emails&&s.emails.length)?s.emails:(s.contact||[]);
+  if(!list.length) return '<span class="pill muted">—</span>';
+  const first=list[0];
+  const link = /@/.test(first) ? `<a class="email" href="mailto:${esc(first)}">${esc(first)}</a>` : `<span class="email">${esc(first)}</span>`;
+  return link + (list.length>1?` <span class="pill muted">+${list.length-1}</span>`:'');
 }
 function wkCell(r){
-  const n = (r.well_known||[]).filter(h=>h.found).length;
-  return n ? `<span class="ok">${n}</span>` : '<span class="muted">0</span>';
+  const n=(r.well_known||[]).filter(h=>h.found).length;
+  return n?`<span class="pill accent">${n} found</span>`:'<span class="pill muted">0</span>';
 }
 
 function detailHTML(r){
-  if(r.error) return `<span class="bad">✗ ${esc(r.error)}</span>`;
-  let out = '';
-  const rb = r.robots;
-  if(rb && rb.found && ((rb.disallow||[]).length || (rb.sitemaps||[]).length)){
-    out += `<b>robots.txt</b>  (${(rb.disallow||[]).length} disallow, ${(rb.sitemaps||[]).length} sitemaps)\n`;
-    (rb.disallow||[]).slice(0,25).forEach(d => out += `  Disallow: ${esc(d)}\n`);
-    if((rb.disallow||[]).length>25) out += `  … ${rb.disallow.length-25} more\n`;
-    (rb.sitemaps||[]).forEach(s => out += `  Sitemap: ${esc(s)}\n`);
-    out += '\n';
+  if(r.error) return `<div class="dsec"><div class="err">✗ ${esc(r.error)}</div></div>`;
+  const out=[];
+  const rb=r.robots;
+  if(rb&&rb.found&&((rb.disallow||[]).length||(rb.sitemaps||[]).length)){
+    const dis=(rb.disallow||[]).slice(0,25).map(d=>`<div>Disallow: ${esc(d)}</div>`).join('');
+    const more=(rb.disallow||[]).length>25?`<div class="muted">… ${rb.disallow.length-25} more</div>`:'';
+    const sm=(rb.sitemaps||[]).map(s=>`<div>Sitemap: ${esc(s)}</div>`).join('');
+    out.push(`<div class="dsec"><h4>robots.txt <span class="pill muted">${(rb.disallow||[]).length} disallow · ${(rb.sitemaps||[]).length} sitemaps</span></h4><div class="list">${dis}${more}${sm}</div></div>`);
   }
-  const s = r.security_txt;
-  if(s && s.found){
-    out += `<b>security.txt</b>  ${esc(s.url)}${s.signed?'  [PGP-signed]':''}\n`;
-    const f = (k,v) => (v&&v.length) ? v.forEach(x => out += `  ${k}: ${esc(x)}\n`) : null;
-    f('Contact', s.contact);
-    if(s.expires) out += `  Expires: ${esc(s.expires)} (${esc(s.expiry_state)})\n`;
-    f('Policy', s.policy); f('Encryption', s.encryption); f('Acknowledgments', s.acknowledgments);
-    f('Preferred-Languages', s.preferred_languages); f('Canonical', s.canonical);
-    f('Hiring', s.hiring); f('CSAF', s.csaf);
-    out += '\n';
+  const s=r.security_txt;
+  if(s&&s.found){
+    const rows=[];
+    const kv=(k,v)=>{ (v&&v.length?v:[]).forEach(x=> rows.push(`<dt>${k}</dt><dd>${esc(x)}</dd>`)); };
+    kv('Contact', s.contact);
+    if(s.expires) rows.push(`<dt>Expires</dt><dd>${esc(s.expires)} <span class="pill ${s.expiry_state==='valid'?'ok':s.expiry_state==='expired'?'bad':'warn'}">${esc(s.expiry_state)}</span></dd>`);
+    kv('Policy', s.policy); kv('Encryption', s.encryption); kv('Acknowledgments', s.acknowledgments);
+    kv('Preferred-Languages', s.preferred_languages); kv('Canonical', s.canonical);
+    kv('Hiring', s.hiring); kv('CSAF', s.csaf);
+    const signed = s.signed ? ' <span class="pill accent">PGP-signed</span>' : '';
+    out.push(`<div class="dsec"><h4>security.txt${signed}</h4><dl class="kv">${rows.join('')}</dl></div>`);
   }
-  const wk = (r.well_known||[]);
+  const wk=(r.well_known||[]);
   if(wk.length){
-    out += `<b>.well-known</b>\n`;
-    wk.forEach(h => out += `  [${h.status}] ${esc(h.path.replace('/.well-known/',''))}${h.content_type?'  '+esc(h.content_type):''}\n`);
+    const items=wk.map(h=>`<div>[${h.status}] ${esc(h.path.replace('/.well-known/',''))}${h.content_type?`  <span class="muted">${esc(h.content_type)}</span>`:''}</div>`).join('');
+    out.push(`<div class="dsec"><h4>/.well-known/</h4><div class="list">${items}</div></div>`);
   }
-  return out.trim() || '<span class="muted">nothing notable</span>';
+  return out.join('') || '<div class="dsec"><span class="list muted">Nothing notable — no robots.txt, security.txt, or well-known hits.</span></div>';
 }
 
-// Exports -------------------------------------------------------------------
-$('#copy').addEventListener('click', () => {
-  navigator.clipboard.writeText(JSON.stringify(lastResults, null, 2));
-  $('#status').textContent = 'JSON copied to clipboard';
+/* ---- exports ---- */
+$('#copy').addEventListener('click', async () => {
+  const json = JSON.stringify(lastResults, null, 2);
+  let ok = false;
+  if (navigator.clipboard && window.isSecureContext) {
+    try { await navigator.clipboard.writeText(json); ok = true; } catch {}
+  }
+  if (!ok) {
+    try {
+      const t = document.createElement('textarea');
+      t.value = json; t.style.position='fixed'; t.style.opacity='0';
+      document.body.appendChild(t); t.select();
+      ok = document.execCommand('copy'); t.remove();
+    } catch {}
+  }
+  setStatus(ok ? 'JSON copied to clipboard' : 'Copy failed — select the results manually', !ok);
 });
 $('#csv').addEventListener('click', () => {
-  const head = ['target','base_url','error','robots_found','robots_disallow_count','sitemaps',
+  const head=['target','base_url','error','robots_found','robots_disallow_count','sitemaps',
     'securitytxt_found','securitytxt_location','expires','expiry_state','emails','policy','wellknown_hits'];
-  const rows = lastResults.map(r => {
-    const s = r.security_txt || {};
-    return [
-      r.target, r.base_url, r.error||'',
+  const rows=lastResults.map(r=>{
+    const s=r.security_txt||{}, f=!!s.found;
+    return [r.target,r.base_url,r.error||'',
       !!(r.robots&&r.robots.found), r.robots?(r.robots.disallow||[]).length:0, (r.robots?.sitemaps||[]).join(' | '),
-      !!s.found, s.location||'', s.expires||'', s.expiry_state||'',
-      (s.emails||[]).join(' | '), (s.policy||[]).join(' | '),
-      (r.well_known||[]).filter(h=>h.found).map(h=>h.path.replace('/.well-known/','')).join(' | ')
-    ];
+      f, f?(s.location||''):'', f?(s.expires||''):'', f?(s.expiry_state||''):'',
+      f?(s.emails||[]).join(' | '):'', f?(s.policy||[]).join(' | '):'',
+      (r.well_known||[]).filter(h=>h.found).map(h=>h.path.replace('/.well-known/','')).join(' | ')];
   });
-  const csv = [head, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
-  const blob = new Blob([csv], {type:'text/csv'});
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob); a.download = 'securitychecker.csv'; a.click();
+  const csv=[head,...rows].map(r=>r.map(c=>`"${String(c).replace(/"/g,'""')}"`).join(',')).join('\n');
+  const blob=new Blob([csv],{type:'text/csv'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob); a.download='securitychecker.csv'; a.click();
   URL.revokeObjectURL(a.href);
+  setStatus('CSV downloaded');
 });
 </script>
 </body>
