@@ -19,6 +19,9 @@ func TestNormalize(t *testing.T) {
 		{"", "", false},
 		{"not a url", "", false},
 		{"ftp://z.com", "", false},
+		{"[www.kreis-borken.de](https://www.kreis-borken.de)", "https://www.kreis-borken.de", true},
+		{"<https://x.com>", "https://x.com", true},
+		{"`example.com`", "https://example.com", true},
 	}
 	for _, c := range cases {
 		got, ok := Normalize(c.in)
@@ -29,6 +32,27 @@ func TestNormalize(t *testing.T) {
 		if ok && got.BaseURL != c.wantURL {
 			t.Errorf("Normalize(%q) = %q, want %q", c.in, got.BaseURL, c.wantURL)
 		}
+	}
+}
+
+func TestCandidateBases(t *testing.T) {
+	got := candidateBases("https://fh-muenster.de", "fh-muenster.de")
+	want := []string{
+		"https://fh-muenster.de",
+		"https://www.fh-muenster.de",
+		"http://fh-muenster.de",
+	}
+	if len(got) != len(want) {
+		t.Fatalf("got %v, want %v", got, want)
+	}
+	for i := range want {
+		if got[i] != want[i] {
+			t.Errorf("candidate %d = %q, want %q", i, got[i], want[i])
+		}
+	}
+	// A www host should also try the apex as its second candidate.
+	if bases := candidateBases("https://www.x.com", "www.x.com"); bases[1] != "https://x.com" {
+		t.Errorf("www host apex fallback missing, got %v", bases)
 	}
 }
 

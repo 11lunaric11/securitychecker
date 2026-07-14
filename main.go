@@ -26,7 +26,8 @@ import (
 	"github.com/11lunaric11/securitychecker/internal/web"
 )
 
-const version = "1.0.0"
+// version is overridden at release time via -ldflags "-X main.version=...".
+var version = "1.0.0"
 
 func main() {
 	args := os.Args[1:]

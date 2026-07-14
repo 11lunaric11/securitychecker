@@ -24,6 +24,12 @@ binary with **no third-party dependencies**.
 
 ## Install
 
+**Prebuilt binary** — grab the archive for your OS/arch from the
+[Releases](https://github.com/11lunaric11/securitychecker/releases) page (Linux,
+macOS, Windows; amd64/arm64), extract, and put `securitychecker` on your `PATH`.
+
+**From source / Go toolchain:**
+
 ```bash
 # from source (Go 1.23+)
 git clone https://github.com/11lunaric11/securitychecker
@@ -108,6 +114,21 @@ with expandable per-target detail plus **Copy JSON** / **Download CSV**.
   `oauth-authorization-server`, `assetlinks.json`, `apple-app-site-association`,
   `mta-sts.txt`, `host-meta`, `webfinger`, `dnt-policy.txt`, `gpc.json`,
   `nodeinfo`, `ai-plugin.json`, `traffic-advice`.
+
+## Notes
+
+- **Scheme / www fallback** — each target is probed on its given scheme first,
+  then the `www`/apex counterpart and the other scheme, so `www`-only and
+  `http`-only sites resolve automatically. (Apex→www redirects are followed
+  anyway.)
+- **Slow / unreachable hosts** — an unreachable target can cost up to ~3× the
+  `--timeout` while the fallbacks are tried; lower `--timeout` when scanning
+  large lists.
+- **WAF / bot-protected sites** — some hosts stall or block the default
+  `User-Agent`; pass a browser-like one with `--user-agent` if a site you can
+  reach in a browser errors out.
+- Markdown-linkified pastes (`[host](https://host)`), `<url>`, and quoted/backtick
+  inputs are unwrapped automatically.
 
 ## Development
 

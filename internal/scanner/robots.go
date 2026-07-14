@@ -8,26 +8,59 @@ import (
 )
 
 // fetchRobots retrieves and parses /robots.txt. It is also the per-target
-// connectivity probe: on a transport-level failure over https it retries once
-// over http and returns the base URL that actually worked so the remaining
-// checks reuse the right scheme.
+// connectivity probe: it walks a short list of candidate base URLs (the given
+// scheme/host, then the http and www/apex variants) and uses the first that
+// connects, returning that base so the remaining checks reuse the right one.
 func (s *Scanner) fetchRobots(ctx context.Context, base, host string) (*model.RobotsInfo, string, error) {
-	fr, err := s.fetch(ctx, base+"/robots.txt")
-	if err != nil && strings.HasPrefix(base, "https://") {
-		altBase := "http://" + host
-		if fr2, err2 := s.fetch(ctx, altBase+"/robots.txt"); err2 == nil {
-			fr, err, base = fr2, nil, altBase
+	var (
+		fr          *fetchResult
+		err         error
+		workingBase = base
+	)
+	for _, cand := range candidateBases(base, host) {
+		fr, err = s.fetch(ctx, cand+"/robots.txt")
+		if err == nil {
+			workingBase = cand
+			break
 		}
 	}
 	if err != nil {
 		return nil, base, err
 	}
-	info := &model.RobotsInfo{URL: base + "/robots.txt", Status: fr.status}
+	info := &model.RobotsInfo{URL: workingBase + "/robots.txt", Status: fr.status}
 	if fr.status == 200 && !looksLikeHTML(fr.body) {
 		info.Found = true
 		parseRobots(info, fr.body)
 	}
-	return info, base, nil
+	return info, workingBase, nil
+}
+
+// candidateBases returns up to three base URLs to try, in order, when probing a
+// target: the original, the www/apex counterpart on the same scheme, and the
+// other scheme on the original host. This covers www-only and http-only sites
+// while capping worst-case latency on a dead host at 3x the timeout. (Apex→www
+// redirects are already followed by the HTTP client, so this only kicks in when
+// the original neither redirects nor connects.)
+func candidateBases(base, host string) []string {
+	orig := "https"
+	if strings.HasPrefix(base, "http://") {
+		orig = "http"
+	}
+	other := "https"
+	if orig == "https" {
+		other = "http"
+	}
+
+	altHost := "www." + host
+	if strings.HasPrefix(host, "www.") {
+		altHost = strings.TrimPrefix(host, "www.")
+	}
+
+	return dedupe([]string{
+		orig + "://" + host,    // as given
+		orig + "://" + altHost, // www/apex variant, same scheme
+		other + "://" + host,   // other scheme, original host
+	})
 }
 
 // parseRobots extracts user-agents, disallow/allow rules and sitemaps. It is
