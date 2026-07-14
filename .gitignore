@@ -1,0 +1,16 @@
+# compiled binary
+/securitychecker
+securitychecker.exe
+
+# build/test artifacts
+/dist/
+*.out
+*.test
+
+# editor / OS
+.DS_Store
+.idea/
+.vscode/
+
+# local tooling config
+.claude/
